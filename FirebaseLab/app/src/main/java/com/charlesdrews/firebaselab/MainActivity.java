@@ -2,8 +2,6 @@ package com.charlesdrews.firebaselab;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
@@ -32,11 +30,12 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        getUsername();
+        setupUsername();
+        getSupportActionBar().setTitle("Chatting as " + mUsername);
 
         final Firebase firebaseMessages = new Firebase("https://glaring-fire-165.firebaseio.com/messages");
-
         final ListView listView = (ListView) findViewById(R.id.list_view);
+        listView.setTranscriptMode(ListView.TRANSCRIPT_MODE_ALWAYS_SCROLL);
 
         final FirebaseListAdapter<Message> adapter = new FirebaseListAdapter<Message>(
                 this, Message.class, android.R.layout.simple_list_item_2, firebaseMessages) {
@@ -47,8 +46,6 @@ public class MainActivity extends AppCompatActivity {
 
                 user.setText(message.getUsername());
                 text.setText(message.getMessageText());
-
-                listView.setSelection(i);
             }
         };
         listView.setAdapter(adapter);
@@ -67,33 +64,36 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        switch (item.getItemId()) {
+            case R.id.action_refresh_username:
+                SharedPreferences preferences = getApplication().getSharedPreferences(CHAT_PREFS_KEY, MODE_PRIVATE);
+                getNewUsername(preferences);
+                getSupportActionBar().setTitle(mUsername);
+                return true;
+            case R.id.action_settings:
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-
-        return super.onOptionsItemSelected(item);
     }
 
-    public void getUsername() {
+    public void setupUsername() {
         SharedPreferences preferences = getApplication().getSharedPreferences(CHAT_PREFS_KEY, MODE_PRIVATE);
         mUsername = preferences.getString(USERNAME_KEY, null);
         if (mUsername == null) {
-            Random random = new Random(System.currentTimeMillis());
-            mUsername = "User" + random.nextInt(10000);
-            preferences.edit().putString(USERNAME_KEY, mUsername).commit();
+            getNewUsername(preferences);
         }
+    }
+
+    public void getNewUsername(SharedPreferences preferences) {
+        Random random = new Random(System.currentTimeMillis());
+        mUsername = "User" + random.nextInt(10000);
+        preferences.edit().putString(USERNAME_KEY, mUsername).commit();
     }
 }
